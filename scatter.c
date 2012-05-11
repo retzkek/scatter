@@ -26,12 +26,16 @@ int optNumTrails=20;
 float optTimeStep=0.5;
 int optNumGroups=0;
 struct xs *optCrossSections;  // cross-sections must be defined in the conf file
+int optNumBins=10;
  
 // textures
 GLuint texCyl, texBot, texTop;
 
 // status vars
 static const int nbins=10;
+
+// window info
+int ww, wh;
 
 
 int loadOpts(char* filename)
@@ -77,6 +81,8 @@ int loadOpts(char* filename)
                  &(optCrossSections[g].sigc),&(optCrossSections[g].sigs));
         }
       }
+    } else if (!strcmp(card,"num-bins")) {
+      sscanf(val,"%i",&optNumBins);
     }
   }
   
@@ -188,6 +194,13 @@ void drawEnvironment()
 
 void drawStatus()
 {
+  char str[80]; 
+  char *ch; 
+  static int btop=220, bbot=20, bleft=20, bright=420;
+  int i;
+  int bw, bh;
+  float r, g, b;
+
   GLint matrixMode;
   GLboolean lightingOn;
 
@@ -198,22 +211,123 @@ void drawStatus()
 
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
-    glLoadIdentity();
-    gluOrtho2D(0.0, 1.0, 0.0, 1.0);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-      glLoadIdentity();
-      glPushAttrib(GL_COLOR_BUFFER_BIT);       /* save current colour */
-      glColor3f(0.0, 0.0, 0.0);
+  glLoadIdentity();
+  gluOrtho2D(0, ww, 0, wh); // set scale to window dimensions, so that coords=pixels
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glLoadIdentity();
+  glPushAttrib(GL_COLOR_BUFFER_BIT);       /* save current colour */
+  
+  if (statusFlag) {    
+      // draw left button
+    glColor4f(0.0, 0.0, 0.0,1.0);
+    glBegin( GL_QUADS );
+    glVertex2i(0, bbot);
+    glVertex2i(20, bbot);
+    glVertex2i(20, btop);
+    glVertex2i(0, btop);
+    glEnd();
+    // draw text
+    sprintf(str,"<");
+    glColor3f(0.8, 0.8, 0.8);
+    glRasterPos2i(2,bbot+(btop-bbot)/2);
+    for(ch= str; *ch; ch++) {
+      glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, (int)*ch);
+    }
+
+    // draw box
+    glColor4f(0.0, 0.0, 0.0,0.5);
+    glBegin( GL_QUADS );
+    glVertex2i(bleft, bbot);
+    glVertex2i(bright, bbot);
+    glVertex2i(bright, btop);
+    glVertex2i(bleft, btop);
+    glEnd();
+  
+    // draw frame rate      
+    sprintf(str,"Frame rate: %3.2f frame/s",frameFps());
+    glColor3f(1.0, 1.0, 1.0);
+    glRasterPos2i(bleft+10,btop-20);
+    for(ch= str; *ch; ch++) {
+     glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, (int)*ch);
+    }
+  
+    // draw simulation rate
+    sprintf(str,"Simulation rate: %1.2f s/frame",optTimeStep);
+    glColor3f(1.0, 1.0, 1.0);
+    glRasterPos2i(bleft+10,btop-35);
+    for(ch= str; *ch; ch++) {
+      glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, (int)*ch);
+    }
+  
+    // draw k-effective
+    sprintf(str,"k-effective: %1.5f",getKeff());
+    glColor3f(1.0, 1.0, 1.0);
+    glRasterPos2i(bleft+10,btop-50);
+    for(ch= str; *ch; ch++) {
+     glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, (int)*ch);
+    }
+  
+    // draw number of neutrons
+    sprintf(str,"Number of neutrons: %i",getNumNeutrons());
+    glColor3f(1.0, 1.0, 1.0);
+    glRasterPos2i(bleft+10,btop-65);
+    for(ch= str; *ch; ch++) {
+      glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, (int)*ch);
+    }
+  
+  
+    // draw energy spectrum
+    sprintf(str,"Neutron Energy Spectrum");
+    glColor3f(1.0, 1.0, 1.0);
+    glRasterPos2i(bleft+140,btop-80);
+    for(ch= str; *ch; ch++) {
+      glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, (int)*ch);
+    }
+    bw=(bright-bleft-20)/optNumBins;
+    for (i=0;i<optNumBins;i++) {
+      // draw background   
+      glColor4f(0.2, 0.2, 0.2,0.5);
       glBegin( GL_QUADS );
-      glVertex3f(0.05, 0.05, 0.0);
-      glVertex3f(0.50, 0.05, 0.0);
-      glVertex3f(0.50, 0.25, 0.0);
-      glVertex3f(0.05, 0.25, 0.0);
-      glEnd();      
-      glPopAttrib();
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
+      glVertex2i(bleft+10+bw*i, bbot+10);
+      glVertex2i(bleft+10+bw*(i+1), bbot+10);
+      glVertex2i(bleft+10+bw*(i+1), bbot+110);
+      glVertex2i(bleft+10+bw*i, bbot+110);
+      glEnd();
+    
+      //draw colorbar
+      bh=50*getBinValue(i);
+      if (bh > 100) bh=100;
+      hsv2rgb(5.0-getBinEnergy(i)/optInitEnergy*5.0,1.0,1.0,&r,&g,&b);
+      glColor3f(r, g, b);
+      glBegin( GL_QUADS );
+      glVertex2i(bleft+10+bw*i,bbot+10);
+      glVertex2i(bleft+10+bw*(i+1),bbot+10);
+      glVertex2i(bleft+10+bw*(i+1),bbot+10+bh);
+      glVertex2i(bleft+10+bw*i,bbot+10+bh);
+      glEnd();
+    }
+  } else {
+    // draw right button
+    glColor4f(0.0, 0.0, 0.0,1.0);
+    glBegin( GL_QUADS );
+    glVertex2i(0, bbot);
+    glVertex2i(20, bbot);
+    glVertex2i(20, btop);
+    glVertex2i(0, btop);
+    glEnd();
+    // draw text
+    sprintf(str,">");
+    glColor3f(0.8, 0.8, 0.8);
+    glRasterPos2i(2,bbot+(btop-bbot)/2);
+    for(ch= str; *ch; ch++) {
+      glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, (int)*ch);
+    }
+  }    
+  
+  glPopAttrib();
+  glPopMatrix();
+  glMatrixMode(GL_PROJECTION);
   glPopMatrix();
   glMatrixMode(matrixMode);
   if (lightingOn) glEnable(GL_LIGHTING);
@@ -245,7 +359,7 @@ void init()
   texBot=LoadTextureRAW("plate2.raw",256,256,1);
   texTop=LoadTextureRAW("grate.raw",256,512,1);
   
-  initNeutrons(optInitNeutrons,optMaxNeutrons,optInitEnergy,optNumTrails,optNumGroups,optCrossSections);
+  initNeutrons(optInitNeutrons,optMaxNeutrons,optInitEnergy,optNumTrails,optNumGroups,optCrossSections,optNumBins);
   frameInit(30.0);
 }
 
@@ -256,11 +370,11 @@ void display()
   if (objectFlag) drawEnvironment();
   drawNeutrons(tailFlag);
   if (explosionFlag) drawExplosions();
-  if (statusFlag) drawStatus();
+  drawStatus();
   
   // measure, limit, and display framerate
   frameMark();
-  if (frameFlag) frameDraw(GLUT_BITMAP_HELVETICA_10, 1.0, 1.0, 1.0, 0.05, 0.95);
+  //if (frameFlag) frameDraw(GLUT_BITMAP_HELVETICA_10, 1.0, 1.0, 1.0, 0.05, 0.95);
   
   glutSwapBuffers();
 
@@ -268,10 +382,12 @@ void display()
 
 void reshape(int w, int h)
 {
+  ww=w;
+  wh=h;
   glViewport(0, 0, (GLsizei) w, (GLsizei) h);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  gluPerspective(60.0, (GLdouble)w/(GLdouble) h, 1.0, 500.0);
+  gluPerspective(60.0, (GLfloat)w/(GLfloat) h, 1.0, 500.0);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   gluLookAt(120.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0);
@@ -353,6 +469,18 @@ void skeyboard(int key, int x, int y)
   }
 }
 
+void mouse(int button, int state, int x, int y)
+{
+  y=wh-y; // change to gl coordinates
+  
+  switch (button) {
+    case GLUT_LEFT_BUTTON:
+      if (state == GLUT_DOWN) {
+        if (x < 20 && y > 20 && y <220) statusFlag=!statusFlag;
+      }
+      break;
+  }
+}
 
 int main(int argc, char** argv)
 {
@@ -401,6 +529,7 @@ int main(int argc, char** argv)
   glutIdleFunc(animate);
   glutKeyboardFunc(keyboard);
   glutSpecialFunc(skeyboard); 
+  glutMouseFunc(mouse);
   glutMainLoop();
   return 0;
 }

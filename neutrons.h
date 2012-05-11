@@ -6,15 +6,15 @@
 #define NEUTRON_DEAD        2
 
 struct trail {
-  double x, y, z;
-  double rad;
+  float x, y, z;
+  float rad;
 };
 
 struct neutron {
   int state;
-  double energy;
-  double x,y,z;           // current location
-  double i, j, k;         // direction vector
+  float energy;
+  float x,y,z;           // current location
+  float i, j, k;         // direction vector
   struct trail *trail;    // trails
 };
 
@@ -25,23 +25,21 @@ struct xs {
   float sigs;
 };
 
-void initNeutrons(int,int,float,int,int,struct xs*);
+float getKeff(void);
+float getBinValue(int);
+float getBinEnergy(int);
+int getNumNeutrons(void);
+
+void initNeutrons(int,int,float,int,int,struct xs*,int);
 void drawNeutrons(int);
-void updateNeutrons(double);
+void updateNeutrons(float);
 
-void initNeutron(int,double);
+void initNeutron(int,float);
 void scatterNeutron(int);
-void addNeutron(double, double, double);
+void addNeutron(float, float, float);
 
-void hsv2rgb(double, double, double, double*, double*, double*);
+void hsv2rgb(float, float, float, float*, float*, float*);
 
+  
 
-/*static const double sigma[3][4] =
-  // speed         fiss   capture    scatter
-{{0.5,  0.5,   0.02,     0.01},
-{1.0,   0.04,  0.04,     0.07},
-{2.0,       0.01,  0.01,     0.12}};
- 
-static const int nGroups = 3;
-*/
 #endif

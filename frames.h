@@ -5,8 +5,8 @@
 #include <stdio.h>
 
 struct timeval frameStartTime, frameEndTime;
-double ftime;
-float fps, maxFps;
+double ftime; // this MUST be a double!
+float fps, maxFps; 
 
 
 float frameInit(float maxFramesPerSecond) 
@@ -18,7 +18,7 @@ float frameInit(float maxFramesPerSecond)
 
 float frameMark() 
 {             
-  double ftime1; 
+  double ftime1; // this MUST be a double!
 
   do {
     gettimeofday(&frameEndTime, NULL);
@@ -26,6 +26,11 @@ float frameMark()
     fps= 1.0/(ftime1-ftime);
   } while (fps > maxFps); 
   ftime=ftime1;
+  return fps;
+}
+
+float frameFps()
+{
   return fps;
 }
 

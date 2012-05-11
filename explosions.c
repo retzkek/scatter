@@ -29,7 +29,7 @@ void drawExplosions(void)
   
   for (i=0;i<MAX_EXPLOSIONS;i++) {
     if (es[i].size >= 0.0) {
-      glColor4d(0.2, 0.5, 0.6, (1.0-es[i].size/MAX_SIZE));
+      glColor4f(0.2, 0.5, 0.6, (1.0-es[i].size/MAX_SIZE));
       glPushMatrix();
         glTranslated(es[i].x, es[i].y, es[i].z);
         glutSolidSphere(es[i].size, 10, 10);
