@@ -22,73 +22,38 @@ int statusFlag=0;
 int optMaxNeutrons=500;
 int optInitNeutrons=50;
 float optInitEnergy=2.0;
-int optNumTrails=20;
+int optNumTrails=40;
 float optTimeStep=0.5;
-int optNumGroups=0;
-struct xs *optCrossSections;  // cross-sections must be defined in the conf file
-int optNumBins=10;
+int optNumGroups=4;
+struct xs optCrossSections[]={
+{
+  .emax = 0.1,  
+  .sigf = 10.0,
+  .sigc = 0.001,
+  .sigs = 0.001},
+{
+  .emax = 0.5,
+  .sigf = 0.5,
+  .sigc = 0.02,
+  .sigs = 0.01},
+{
+  .emax = 1.0,
+  .sigf = 0.04,
+  .sigc = 0.04,
+  .sigs = 0.07},
+{
+  .emax = 2.0,
+  .sigf = 0.01,
+  .sigc = 0.01,
+  .sigs = 0.12}
+};
+int optNumBins=40;
  
 // status vars
 static const int nbins=10;
 
 // window info
 int ww, wh;
-
-int loadOpts(char* filename)
-{
-  char line[80];
-  char card[80];
-  int i, g;
-  char* val;
-  int found;
-    
-  FILE* optFile;
-  optFile = fopen( filename, "r" );
-  if ( optFile == NULL ) return 0;
-  
-  while (fgets(line,sizeof(line),optFile) != NULL) {
-    // check for blank line or comment
-    if (line[0]=='\n' || line[0]=='!')continue;
-    // replace ":" character with string terminator; basically, split the line at the first ":"
-    found=0;
-    for (i=0;i<sizeof(line);i++) {
-      if (line[i]==':') {
-        line[i]='\0';
-        found=1;
-        break;
-      }
-    }
-    if (!found) continue; // no colon, so it must not be a valid option assignment
-    sscanf(line,"%s",&card);
-    val=&line[0]+i+1; // address of first character after ":"
-    if (!strcmp(card,"max-neutrons")) {
-      sscanf(val,"%i",&optMaxNeutrons);
-    } else if (!strcmp(card,"init-neutrons")) {
-      sscanf(val,"%i",&optInitNeutrons);
-    } else if (!strcmp(card,"init-energy")) {
-      sscanf(val,"%f",&optInitEnergy);
-    } else if (!strcmp(card,"trail-length")) {
-      sscanf(val,"%i",&optNumTrails);
-    } else if (!strcmp(card,"time-step")) {
-      sscanf(val,"%f",&optTimeStep);
-    } else if (!strcmp(card,"cross-sections")) {
-      sscanf(val,"%i",&optNumGroups);
-      optCrossSections = malloc(4*optNumGroups*sizeof(*optCrossSections));
-      for (g=0;g<optNumGroups;g++) {
-        if (fgets(line,sizeof(line),optFile)==NULL) {
-          return 1;
-        } else {
-          sscanf(line,"%f,%f,%f,%f",&(optCrossSections[g].emax),&(optCrossSections[g].sigf),
-                 &(optCrossSections[g].sigc),&(optCrossSections[g].sigs));
-        }
-      }
-    } else if (!strcmp(card,"num-bins")) {
-      sscanf(val,"%i",&optNumBins);
-    }
-  }
-  
-  return 1;
-}
 
 void init()
 {
@@ -226,12 +191,6 @@ int main(int argc, char** argv)
   int g;
   
   srandom(time(0));
-  
-  // load config file
-  if (!loadOpts("scatter.conf")) {
-    printf("%s: ERROR:  Problem when reading config file scatter.conf\n",argv[0]);
-    exit(1);
-  }
   
   // consistency checks
   if (optInitNeutrons > optMaxNeutrons) {
