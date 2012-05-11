@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <GL/glut.h>
+#include <GLUT/glut.h>
 
 #include "neutrons.h"
 #include "explosions.h"
@@ -110,6 +110,7 @@ void initNeutron(int n, float boundRad)
   for (i=0;i<ntr;i++) ns[n].trail[i].y=ns[n].y;
   ns[n].z=(float)random()/RAND_MAX*boundRad*2-boundRad;
   for (i=0;i<ntr;i++) ns[n].trail[i].z=ns[n].z;
+  ns[n].energy=0.0;
   scatterNeutron(n);
   ns[n].energy=e0*sin((float)random()/RAND_MAX*3.14159);
   for (i=0;i<ntr;i++) ns[n].trail[i].rad=-1.0;
@@ -127,7 +128,7 @@ void drawNeutrons(int trails)
     if (ns[i].state==NEUTRON_ALIVE) {
       hsv2rgb(5.0-ns[i].energy/e0*5.0,1.0,1.0,&r,&g,&b);
       glColor3f(r, g, b);
-      glPointSize(40);
+      glPointSize(10);
       glBegin( GL_POINTS );
         glVertex3f(ns[i].x, ns[i].y, ns[i].z);
       glEnd();
@@ -187,7 +188,7 @@ void updateNeutrons(float dt)
         ns[i].trail[0].x=ns[i].x;
         ns[i].trail[0].y=ns[i].y;
         ns[i].trail[0].z=ns[i].z;
-        ns[i].trail[0].rad=(float)random()/RAND_MAX*30+20;
+        ns[i].trail[0].rad=(float)random()/RAND_MAX*7+3;
       } else if (ns[i].state==NEUTRON_TRAIL_FADE) {
         for (j=ntr-1;j>0;j--) {
           ns[i].trail[j].x=ns[i].trail[j-1].x;

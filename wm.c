@@ -1,6 +1,6 @@
 #include "wm.h"
 #include "texture.h"
-#include <GL/glut.h>
+#include <GLUT/glut.h>
 
 #define WM_BUTTON_UP 0
 #define WM_BUTTON_DOWN 1
@@ -28,10 +28,10 @@ struct win {
 };
 
 int nWindows;
-struct win *ws=NULL;
+struct win *ws=0;
 
 // textures
-GLuint btnNormal, btnHover, btnPressed;
+GLuint btnNormalEnd, btnNormalMid, btnHoverEnd, btnHoverMid, btnPressedMid, btnPressedEnd;
 
 static const int bsize=20;
 //static const int nans=10;
@@ -46,17 +46,15 @@ void wmInit(int mainWindowWidth, int mainWindowHeight)
   mww=mainWindowWidth;
   mwh=mainWindowHeight;
   
-  btnNormal=LoadTextureRAW("button_normal.raw",72,24,1);
-  btnHover=LoadTextureRAW("button_hover.raw",72,24,1);
-  btnPressed=LoadTextureRAW("button_pressed.raw",72,24,1);
-  /*
-  btnNormal=LoadTextureRAW("plate.raw",256,512,1);
-  btnHover=LoadTextureRAW("plate.raw",256,512,1);
-  btnPressed=LoadTextureRAW("plate.raw",256,512,1);
-  */
+  btnNormalEnd=LoadTextureRAW("rc/button_normal_end.raw",24,24,0);
+  btnNormalMid=LoadTextureRAW("rc/button_normal_mid.raw",24,24,0);
+  btnHoverEnd=LoadTextureRAW("rc/button_hover_end.raw",24,24,0);
+  btnHoverMid=LoadTextureRAW("rc/button_hover_mid.raw",24,24,0);
+  btnPressedEnd=LoadTextureRAW("rc/button_pressed_end.raw",24,24,0);
+  btnPressedMid=LoadTextureRAW("rc/button_pressed_mid.raw",24,24,0);
 }
 
-void wmAddWindow(const char* label, void(*drawFunc)(), int width, int height, int side, int state, int moveable)
+void wmAddWindow(const char* label, void(*drawFunc)(), int width, int height, int side, int state, int moveable, int collapsable)
 {
   nWindows++;
   
@@ -66,7 +64,7 @@ void wmAddWindow(const char* label, void(*drawFunc)(), int width, int height, in
     ws=(struct win *)realloc(ws,nWindows*sizeof(*ws));
   }
   
-  ws[nWindows-1].label=malloc(sizeof(label));
+  ws[nWindows-1].label=malloc(strlen(label)*sizeof(label));
   strcpy(ws[nWindows-1].label,label);
   ws[nWindows-1].w=width;
   ws[nWindows-1].h=height;
@@ -75,7 +73,7 @@ void wmAddWindow(const char* label, void(*drawFunc)(), int width, int height, in
   ws[nWindows-1].side=side;
   ws[nWindows-1].state=state;
   ws[nWindows-1].drawFunc=drawFunc;
-  ws[nWindows-1].mouseFunc=NULL;
+  ws[nWindows-1].mouseFunc=0;
   ws[nWindows-1].bstate=WM_BUTTON_UP;
   ws[nWindows-1].moveable=moveable;
   
@@ -204,33 +202,63 @@ void wmDrawWindows(int w, int h)
   for (i=0;i<nWindows;i++) {
     glPushMatrix();
     
+    GLuint texmid, texend;
+    
     // draw expand/collapse button
     glEnable(GL_TEXTURE_2D);
     glColor4f(1.0, 1.0, 1.0,1.0);
     if (ws[i].bstate == WM_BUTTON_DOWN) {
-      glBindTexture(GL_TEXTURE_2D,btnPressed);
+      texend=btnPressedEnd;
+      texmid=btnPressedMid;
     } else if (ws[i].bstate == WM_BUTTON_HOVER) {
-      glBindTexture(GL_TEXTURE_2D,btnHover);
-      //glColor4f(0.5, 0.2, 0.0,1.0);
+      texend=btnHoverEnd;
+      texmid=btnHoverMid;
     } else {
-      glBindTexture(GL_TEXTURE_2D,btnNormal);
-      //glColor4f(0.0, 0.0, 0.0,1.0);
+      texend=btnNormalEnd;
+      texmid=btnNormalMid;
     }
-    glBegin( GL_QUADS );
-    glTexCoord2f(0,0); glVertex2i(ws[i].bx, ws[i].by);
-    glTexCoord2f(0,1); glVertex2i(ws[i].bx+ws[i].bw, ws[i].by);
-    glTexCoord2f(1,1); glVertex2i(ws[i].bx+ws[i].bw, ws[i].by+ws[i].bh);
-    glTexCoord2f(1,0); glVertex2i(ws[i].bx, ws[i].by+ws[i].bh);
-    glEnd();
+    if (ws[i].side == WM_WINDOW_LEFT || ws[i].side == WM_WINDOW_RIGHT) {
+      glBindTexture(GL_TEXTURE_2D,texend);
+      glBegin( GL_QUADS );
+      glTexCoord2f(0,0); glVertex2i(ws[i].bx,          ws[i].by);
+      glTexCoord2f(0,1); glVertex2i(ws[i].bx+ws[i].bw, ws[i].by);
+      glTexCoord2f(1,1); glVertex2i(ws[i].bx+ws[i].bw, ws[i].by+24);
+      glTexCoord2f(1,0); glVertex2i(ws[i].bx,          ws[i].by+24);
+      glTexCoord2f(1,0); glVertex2i(ws[i].bx,          ws[i].by+ws[i].bh-24);
+      glTexCoord2f(1,1); glVertex2i(ws[i].bx+ws[i].bw, ws[i].by+ws[i].bh-24);
+      glTexCoord2f(0,1); glVertex2i(ws[i].bx+ws[i].bw, ws[i].by+ws[i].bh);
+      glTexCoord2f(0,0); glVertex2i(ws[i].bx,          ws[i].by+ws[i].bh);
+      glEnd();
+      glBindTexture(GL_TEXTURE_2D,texmid);
+      glBegin( GL_QUADS );
+      glTexCoord2f(0,0); glVertex2i(ws[i].bx,          ws[i].by+24);
+      glTexCoord2f(0,1); glVertex2i(ws[i].bx+ws[i].bw, ws[i].by+24);
+      glTexCoord2f(1,1); glVertex2i(ws[i].bx+ws[i].bw, ws[i].by+ws[i].bh-24);
+      glTexCoord2f(1,0); glVertex2i(ws[i].bx,          ws[i].by+ws[i].bh-24);
+      glEnd();
+    } else {
+      glBindTexture(GL_TEXTURE_2D,texend);
+      glBegin( GL_QUADS );
+      glTexCoord2f(0,0); glVertex2i(ws[i].bx,          ws[i].by);
+      glTexCoord2f(0,1); glVertex2i(ws[i].bx,          ws[i].by+ws[i].bh);
+      glTexCoord2f(1,1); glVertex2i(ws[i].bx+24,       ws[i].by+ws[i].bh);
+      glTexCoord2f(1,0); glVertex2i(ws[i].bx+24,       ws[i].by);
+      
+      glTexCoord2f(1,0); glVertex2i(ws[i].bx+ws[i].bw-24, ws[i].by);
+      glTexCoord2f(1,1); glVertex2i(ws[i].bx+ws[i].bw-24, ws[i].by+ws[i].bh);
+      glTexCoord2f(0,1); glVertex2i(ws[i].bx+ws[i].bw,    ws[i].by+ws[i].bh);
+      glTexCoord2f(0,0); glVertex2i(ws[i].bx+ws[i].bw,    ws[i].by);
+      glEnd();
+      glBindTexture(GL_TEXTURE_2D,texmid);
+      glBegin( GL_QUADS );
+      glTexCoord2f(0,0); glVertex2i(ws[i].bx+24,          ws[i].by);
+      glTexCoord2f(1,0); glVertex2i(ws[i].bx+ws[i].bw-24, ws[i].by);
+      glTexCoord2f(1,1); glVertex2i(ws[i].bx+ws[i].bw-24, ws[i].by+ws[i].bh);
+      glTexCoord2f(0,1); glVertex2i(ws[i].bx+24,          ws[i].by+ws[i].bh);
+      glEnd();
+    }
+
     glDisable(GL_TEXTURE_2D);
-    /*
-    glBegin( GL_QUADS );
-    glVertex2i(ws[i].bx, ws[i].by);
-    glVertex2i(ws[i].bx+ws[i].bw, ws[i].by);
-    glVertex2i(ws[i].bx+ws[i].bw, ws[i].by+ws[i].bh);
-    glVertex2i(ws[i].bx, ws[i].by+ws[i].bh);
-    glEnd();
-    */
     // button text
     glColor4f(0.0,0.0,0.0,1.0);
     glLineWidth(1);

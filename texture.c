@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <GL/glut.h>
+#include <GLUT/glut.h>
 
 #include "texture.h"
 
@@ -19,10 +19,10 @@ GLuint LoadTextureRAW( const char * filename, int width, int height, int wrap )
     // allocate buffer
   //width = 512;
   //height = 512;
-  data = malloc( width * height * 3 );
+  data = malloc( width * height * sizeof(*data) );
 
     // read texture data
-  fread( data, width * height * 3, 1, file );
+  fread( data, width * height * sizeof(*data), 1, file );
   fclose( file );
 
     // allocate a texture name
@@ -51,8 +51,9 @@ GLuint LoadTextureRAW( const char * filename, int width, int height, int wrap )
   gluBuild2DMipmaps( GL_TEXTURE_2D, 3, width, height,
                      GL_RGB, GL_UNSIGNED_BYTE, data );
 
-    // free buffer
+  // free buffer
   free( data );
+
 
   return texture;
 }

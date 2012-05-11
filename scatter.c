@@ -1,4 +1,4 @@
-#include <GL/glut.h>
+#include <GLUT/glut.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +11,7 @@
 
 // control flags
 int frameFlag=0;
-int objectFlag=1;
+int objectFlag=0;
 int explosionFlag=1;
 int rotateFlag=0;
 int waterFlag=1;
@@ -45,20 +45,25 @@ int loadOpts(char* filename)
   char card[80];
   int i, g;
   char* val;
+  int found;
     
   FILE* optFile;
   optFile = fopen( filename, "r" );
   if ( optFile == NULL ) return 0;
   
   while (fgets(line,sizeof(line),optFile) != NULL) {
-    sscanf(line,"%s %f",&card,&val);
+    // check for blank line or comment
+    if (line[0]=='\n' || line[0]=='!')continue;
     // replace ":" character with string terminator; basically, split the line at the first ":"
+    found=0;
     for (i=0;i<sizeof(line);i++) {
       if (line[i]==':') {
         line[i]='\0';
+        found=1;
         break;
       }
     }
+    if (!found) continue; // no colon, so it must not be a valid option assignment
     sscanf(line,"%s",&card);
     val=&line[0]+i+1; // address of first character after ":"
     if (!strcmp(card,"max-neutrons")) {
@@ -342,6 +347,20 @@ void drawCrossSections(int w, int h) {
     glEnd();
   }
 }
+
+void drawMenu(int w, int h)
+{
+  // draw background
+  glColor4f(0.0, 0.0, 0.0,0.5);
+  glBegin( GL_QUADS );
+  glVertex2i(0, 0);
+  glVertex2i(w, 0);
+  glVertex2i(w, h);
+  glVertex2i(0, h);
+  glEnd();
+  
+}
+  
 void init()
 {
   //static GLfloat pointParam[3] = {0.0, 1.0, 0.0};
@@ -364,18 +383,25 @@ void init()
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glClearColor(0.0, 0.2, 0.5, 1.0);
 
-  texCyl=LoadTextureRAW("plate.raw",256,512,1);
-  texBot=LoadTextureRAW("plate2.raw",256,256,1);
-  texTop=LoadTextureRAW("grate.raw",256,512,1);
+  texCyl=LoadTextureRAW("rc/plate.raw",256,512,1);
+  texBot=LoadTextureRAW("rc/plate2.raw",256,256,1);
+  texTop=LoadTextureRAW("rc/grate.raw",256,512,1);
   
 
   initNeutrons(optInitNeutrons,optMaxNeutrons,optInitEnergy,optNumTrails,optNumGroups,optCrossSections,optNumBins);
   frameInit(30.0);
   
   wmInit(100,100);
-  wmAddWindow("Status",drawStatus,200,100,WM_WINDOW_LEFT,WM_WINDOW_EXPANDED,WM_WINDOW_UNMOVEABLE);
-  wmAddWindow("Spectrum",drawSpectrum,400,200,WM_WINDOW_LEFT,WM_WINDOW_COLLAPSED,WM_WINDOW_UNMOVEABLE);
-  wmAddWindow("Cross Sections",drawCrossSections,400,200,WM_WINDOW_LEFT,WM_WINDOW_COLLAPSED,WM_WINDOW_MOVEABLE);
+  wmAddWindow("Status",drawStatus,200,100,WM_WINDOW_LEFT,
+              WM_WINDOW_EXPANDED,WM_WINDOW_UNMOVEABLE,WM_WINDOW_UNCOLLAPSABLE);
+  wmAddWindow("Spectrum",drawSpectrum,400,200,WM_WINDOW_LEFT,
+              WM_WINDOW_COLLAPSED,WM_WINDOW_UNMOVEABLE,WM_WINDOW_COLLAPSABLE);
+  wmAddWindow("Cross Sections",drawCrossSections,400,200,WM_WINDOW_LEFT,
+              WM_WINDOW_COLLAPSED,WM_WINDOW_MOVEABLE,WM_WINDOW_COLLAPSABLE);
+  /*wmAddWindow("Menu",drawMenu,800,50,WM_WINDOW_BOTTOM,
+              WM_WINDOW_EXPANDED,WM_WINDOW_UNMOVEABLE,WM_WINDOW_UNCOLLAPSABLE);
+	      */
+
 }
 
 void display()

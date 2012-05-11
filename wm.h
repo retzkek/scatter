@@ -13,10 +13,12 @@
 #define WM_WINDOW_UNMOVEABLE 0
 #define WM_WINDOW_MOVEABLE 1
 
+#define WM_WINDOW_UNCOLLAPSABLE 0
+#define WM_WINDOW_COLLAPSABLE 1
 
 
 void mwInit(int mainWindowWidth, int mainWindowHeight);
-void wmAddWindow(const char* label, void (*drawFunc)(int w, int h), int width, int height, int side, int state, int moveable);
+void wmAddWindow(const char* label, void (*drawFunc)(int w, int h), int width, int height, int side, int state, int moveable, int collapsable);
 void wmSetWindowMouseFunc(void (*mouseFunc)(int x, int y));
 
 void wmMouse(int button, int state, int x, int y);
