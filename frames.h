@@ -2,9 +2,14 @@
 #define frames_h
 
 #include <sys/time.h>
+#include <errno.h>
 #include <stdio.h>
 
+#define FRAME_NOLIMIT 0
+#define FRAME_LIMIT 1
+
 struct timeval frameStartTime, frameEndTime;
+struct timespec sleepTime;
 double ftime; // this MUST be a double!
 float fps, maxFps; 
 
@@ -16,17 +21,40 @@ float frameInit(float maxFramesPerSecond)
   ftime=frameStartTime.tv_sec+frameStartTime.tv_usec*1.0e6;
 }
 
-float frameMark() 
+float frameMark(int limit) 
 {             
   double ftime1; // this MUST be a double!
-
+  int i;
+  //int esv;
+    
+  /*
+  i=0;
   do {
     gettimeofday(&frameEndTime, NULL);
     ftime1=frameEndTime.tv_sec+frameEndTime.tv_usec*1.0E-6;
     fps= 1.0/(ftime1-ftime);
+    i++;
   } while (fps > maxFps); 
+  printf("%i\n",i);
   ftime=ftime1;
   return fps;
+  */
+  gettimeofday(&frameEndTime, NULL);
+  ftime1=frameEndTime.tv_sec*1e9+frameEndTime.tv_usec*1e3;
+  if (limit == FRAME_LIMIT) {
+    if (1.0e9/(ftime1-ftime) > maxFps) {
+      // we need to sleep a bit to maintain the frame rate
+      sleepTime.tv_sec=0;
+      sleepTime.tv_nsec=(1.0e9/maxFps-(ftime1-ftime));
+      nanosleep(&sleepTime,NULL);
+      gettimeofday(&frameEndTime, NULL);
+      ftime1=frameEndTime.tv_sec*1e9+frameEndTime.tv_usec*1e3;
+    }
+  }
+  fps= 1.0e9/(ftime1-ftime);  // calculate the actual FPS (or an approximation thereof)
+  ftime=ftime1;
+  return fps;
+  
 }
 
 float frameFps()
