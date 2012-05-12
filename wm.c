@@ -1,6 +1,6 @@
 #include "wm.h"
 #include "texture.h"
-#include <GLUT/glut.h>
+#include <GL/glut.h>
 #include <stdlib.h>
 #include <string.h>
 
