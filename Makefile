@@ -1,6 +1,6 @@
 cc=gcc
 #lib=-framework OpenGL -framework GLUT
-lib=-lGL -lglut -lGLU
+lib=-lGL -lglut -lGLU -lm
 
 sources=scatter.c neutrons.c explosions.c wm.c texture.c
 headers=neutrons.h explosions.h frames.h texture.h wm.h
@@ -15,4 +15,4 @@ demo: $(demo_sources) $(demo_headers)
 	$(cc) -O -o scatter-demo $(demo_sources) $(lib)
 
 clean:
-	rm -f scatter
+	rm -f scatter scatter-demo
